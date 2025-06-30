@@ -6,6 +6,7 @@ class HiresColorAdjustmentNode:
     Applies shadow/middle/highlight color balance before hi-res fix.
     """
     CATEGORY = "Custom/Hires"
+    NODE_HIDDEN = False
     @classmethod
     def INPUT_TYPES(cls):
         return {
@@ -32,8 +33,8 @@ class HiresColorAdjustmentNode:
                 "highlight_contrast": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 10.0, "step": 0.1}),
             }
         }
-    RETURN_TYPES = ("IMAGE",)
-    RETURN_NAMES = ("image",)
+    RETURN_TYPES = ("IMAGE","JSON")
+    RETURN_NAMES = ("image","metadata")
     FUNCTION = "process"
 
     def process(
@@ -83,7 +84,7 @@ class HiresColorAdjustmentNode:
         if alpha is not None:
             alpha_arr = alpha.astype(np.float32) / 255.0
             out = np.concatenate((out, alpha_arr[..., None]), axis=2)
-        return (out[None],)
+        return (out[None], {'Hires Color Adjust': adjust})
 
 # Register node
 NODE_CLASS_MAPPINGS = {
@@ -92,3 +93,5 @@ NODE_CLASS_MAPPINGS = {
 NODE_DISPLAY_NAME_MAPPINGS = {
     "HiresColorAdjustmentNode": "Hires Color Adjustment",
 }
+
+__all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS"]
