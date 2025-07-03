@@ -12,7 +12,6 @@ class HiresColorAdjustmentNode:
         return {
             "required": {
                 "image": ("IMAGE",),
-                "enabled": ("BOOL", {"default": True}),
                 # Shadow sliders
                 "shadow_r": ("INT", {"default": 0, "min": -100, "max": 100, "step": 1}),
                 "shadow_g": ("INT", {"default": 0, "min": -100, "max": 100, "step": 1}),
@@ -39,7 +38,7 @@ class HiresColorAdjustmentNode:
 
     def process(
         self,
-        image, enabled,
+        image,
         shadow_r, shadow_g, shadow_b, shadow_brightness, shadow_contrast,
         middle_r, middle_g, middle_b, middle_brightness, middle_contrast,
         highlight_r, highlight_g, highlight_b, highlight_brightness, highlight_contrast
@@ -59,26 +58,24 @@ class HiresColorAdjustmentNode:
             'middle':    [middle_r, middle_g, middle_b, middle_brightness, middle_contrast],
             'highlight': [highlight_r, highlight_g, highlight_b, highlight_brightness, highlight_contrast],
         }
-        # Apply if enabled
-        if enabled:
-            # Color balance logic
-            orig = np.array(pil, dtype=np.float32)
-            lum = orig.mean(axis=2)
-            ws = np.clip((128.0 - lum) / 128.0, 0.0, 1.0)
-            wh = np.clip((lum - 128.0) / 128.0, 0.0, 1.0)
-            wm = 1.0 - ws - wh
-            res = np.zeros_like(orig)
-            for w, region in zip((ws, wm, wh), ('shadow', 'middle', 'highlight')):
-                r, g, b, bright, contrast = adjust[region]
-                af = np.array([r, g, b], dtype=np.float32) / 100.0
-                delta = (255.0 - orig) * np.maximum(af, 0.0) + orig * np.minimum(af, 0.0)
-                rv = (orig + delta) * bright
-                mean = rv.mean(axis=(0,1), keepdims=True)
-                rv = (rv - mean) * contrast + mean
-                res += np.clip(rv, 0, 255) * w[..., None]
-            pil = Image.fromarray(np.clip(res, 0, 255).astype(np.uint8))
-            if alpha is not None:
-                pil.putalpha(Image.fromarray(alpha))
+        # Color balance logic
+        orig = np.array(pil, dtype=np.float32)
+        lum = orig.mean(axis=2)
+        ws = np.clip((128.0 - lum) / 128.0, 0.0, 1.0)
+        wh = np.clip((lum - 128.0) / 128.0, 0.0, 1.0)
+        wm = 1.0 - ws - wh
+        res = np.zeros_like(orig)
+        for w, region in zip((ws, wm, wh), ('shadow', 'middle', 'highlight')):
+            r, g, b, bright, contrast = adjust[region]
+            af = np.array([r, g, b], dtype=np.float32) / 100.0
+            delta = (255.0 - orig) * np.maximum(af, 0.0) + orig * np.minimum(af, 0.0)
+            rv = (orig + delta) * bright
+            mean = rv.mean(axis=(0,1), keepdims=True)
+            rv = (rv - mean) * contrast + mean
+            res += np.clip(rv, 0, 255) * w[..., None]
+        pil = Image.fromarray(np.clip(res, 0, 255).astype(np.uint8))
+        if alpha is not None:
+            pil.putalpha(Image.fromarray(alpha))
         # Convert back to tensor batch
         out = np.array(pil).astype(np.float32) / 255.0
         if alpha is not None:
