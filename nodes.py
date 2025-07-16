@@ -11,7 +11,7 @@ class HiresColorAdjustmentNode:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "image": ("IMAGE",),
+                "latent": ("LATENT",),
                 # Shadow sliders
                 "shadow_r": ("INT", {"default": 0, "min": -100, "max": 100, "step": 1}),
                 "shadow_g": ("INT", {"default": 0, "min": -100, "max": 100, "step": 1}),
@@ -32,19 +32,19 @@ class HiresColorAdjustmentNode:
                 "highlight_contrast": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 10.0, "step": 0.1}),
             }
         }
-    RETURN_TYPES = ("IMAGE","JSON")
-    RETURN_NAMES = ("image","metadata")
+    RETURN_TYPES = ("LATENT","JSON")
+    RETURN_NAMES = ("latent","metadata")
     FUNCTION = "process"
 
     def process(
         self,
-        image,
+        latent,
         shadow_r, shadow_g, shadow_b, shadow_brightness, shadow_contrast,
         middle_r, middle_g, middle_b, middle_brightness, middle_contrast,
         highlight_r, highlight_g, highlight_b, highlight_brightness, highlight_contrast
     ):
         # Convert IMAGE batch (torch.Tensor) to numpy uint8
-        arr = image.numpy() if hasattr(image, 'numpy') else image
+        arr = latent.numpy() if hasattr(latent, 'numpy') else latent
         arr = np.clip(arr * 255.0, 0, 255).astype(np.uint8) if arr.dtype in [np.float32, np.float64] else arr.astype(np.uint8)
         # Separate alpha
         alpha = None
